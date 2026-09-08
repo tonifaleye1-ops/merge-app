@@ -86,7 +86,7 @@ export function createOpenAICompletionFn(
 
 export function createGoogleCompletionFn(
   apiKey: string,
-  model = "gemini-2.5-flash",
+  model = "gemini-3.6-flash",
 ): CompletionFn {
   return async ({ system, prompt }) => {
     const response = await fetch(
