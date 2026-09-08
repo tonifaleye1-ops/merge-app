@@ -1,12 +1,16 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MessageInput } from "@/components/chat/MessageInput";
 import { MessageList } from "@/components/chat/MessageList";
 import { ModelSelect } from "@/components/chat/ModelSelect";
+import { createClient } from "@/lib/supabase/client";
 import type { ApiKeyProvider, Message } from "@/types/schema";
 
 export default function ChatPage() {
+  const router = useRouter();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [modelChoice, setModelChoice] = useState<ApiKeyProvider>("anthropic");
@@ -21,6 +25,12 @@ export default function ChatPage() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ title: "Test conversation" }),
         });
+
+        if (conversationRes.status === 401) {
+          router.push("/login");
+          return;
+        }
+
         const conversationBody = await conversationRes.json();
 
         if (!conversationRes.ok) {
@@ -42,7 +52,7 @@ export default function ChatPage() {
     }
 
     init();
-  }, []);
+  }, [router]);
 
   async function handleSend(content: string) {
     if (!conversationId) return;
@@ -70,15 +80,34 @@ export default function ChatPage() {
     }
   }
 
+  async function handleLogOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <main className="mx-auto flex h-screen max-w-2xl flex-col gap-4 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Merge chat (test)</h1>
-        <ModelSelect
-          value={modelChoice}
-          onChange={setModelChoice}
-          disabled={isSending}
-        />
+        <div className="flex items-center gap-3">
+          <ModelSelect
+            value={modelChoice}
+            onChange={setModelChoice}
+            disabled={isSending}
+          />
+          <Link href="/settings" className="text-sm text-blue-600">
+            API keys
+          </Link>
+          <button
+            type="button"
+            onClick={handleLogOut}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Log out
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto rounded-lg border border-gray-200 p-4">
