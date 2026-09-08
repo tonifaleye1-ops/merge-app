@@ -69,6 +69,10 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_auth_user();
 
+-- Trigger-only function: no role should call it directly via the
+-- PostgREST /rpc endpoint that Supabase auto-generates for it.
+revoke execute on function public.handle_new_auth_user() from public;
+
 alter table users enable row level security;
 alter table api_keys enable row level security;
 alter table conversations enable row level security;
